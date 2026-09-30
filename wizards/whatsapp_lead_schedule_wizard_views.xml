@@ -15,6 +15,11 @@
                 <group string="Message">
                     <field name="message" nolabel="1" placeholder="Write the message text..."/>
                 </group>
+                <group string="Attachment (optional)">
+                    <field name="attachment_data" filename="attachment_filename" widget="image"
+                           options="{'size': [120, 120]}"/>
+                    <field name="attachment_filename"/>
+                </group>
                 <footer>
                     <button name="action_confirm" type="object" string="Schedule" class="btn-primary"/>
                     <button string="Cancel" special="cancel" class="btn-secondary"/>

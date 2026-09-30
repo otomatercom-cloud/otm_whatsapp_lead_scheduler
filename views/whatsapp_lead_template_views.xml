@@ -23,6 +23,15 @@
                             <code>{officer_name}</code>.
                         </div>
                     </group>
+                    <group string="Attachment (optional - one image, video or document)">
+                        <field name="attachment_data" filename="attachment_filename"
+                               widget="image" options="{'size': [120, 120]}"
+                               invisible="attachment_type != 'image'"/>
+                        <field name="attachment_data" filename="attachment_filename"
+                               invisible="attachment_type == 'image'"/>
+                        <field name="attachment_filename"/>
+                        <field name="attachment_type" readonly="1"/>
+                    </group>
                     <group string="Notes">
                         <field name="notes" nolabel="1" placeholder="Internal notes - not sent."/>
                     </group>

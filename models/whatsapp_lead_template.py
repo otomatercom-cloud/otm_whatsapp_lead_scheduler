@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from odoo import fields, models
+from odoo import api, fields, models
+
+from . import whatsapp_lead_media_utils as media_utils
 
 _logger = logging.getLogger(__name__)
 
@@ -39,6 +41,37 @@ class OtmWhatsappLeadTemplate(models.Model):
         "rather than blocking the send.",
     )
     notes = fields.Text(help="Internal notes for whoever maintains this template - not sent.")
+
+    # ── Optional media (one per template - WhatsApp only carries one
+    # image/video/document per message) ─────────────────────────────────
+    attachment_data = fields.Binary(string="Attachment")
+    attachment_filename = fields.Char(string="File Name")
+    attachment_type = fields.Selection(
+        [("image", "Image"), ("video", "Video"), ("document", "Document")],
+        compute="_compute_attachment_type", store=True,
+        help="Detected automatically from the file's actual content, not just its name.",
+    )
+
+    @api.depends("attachment_filename", "attachment_data")
+    def _compute_attachment_type(self):
+        for rec in self:
+            rec.attachment_type = (
+                media_utils.guess_attachment_type(rec.attachment_filename, rec.attachment_data)
+                if rec.attachment_data else False
+            )
+
+    @api.constrains("attachment_data", "attachment_type")
+    def _check_attachment_size(self):
+        for rec in self:
+            media_utils.check_attachment_size(rec.attachment_filename, rec.attachment_data, rec.attachment_type)
+
+    def build_media_payload(self):
+        """Returns the media dict for LeadBotClient, or None if this
+        template has no attachment."""
+        self.ensure_one()
+        return media_utils.build_media_payload(
+            self.attachment_filename, self.attachment_data, self.attachment_type
+        )
 
     def render(self, lead, officer=False):
         """Returns the final text for `lead` (a leads.logic record). Never

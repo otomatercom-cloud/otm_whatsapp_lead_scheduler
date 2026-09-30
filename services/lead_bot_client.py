@@ -66,19 +66,29 @@ class LeadBotClient:
             return {"error": "Could not reach this officer's WhatsApp bot service: %s" % exc}
         return self._parse(resp)
 
-    def send_direct_message(self, phone_number, message):
+    def send_direct_message(self, phone_number, message, media=None):
         """`phone_number` is a plain number as stored on the lead (e.g.
         '9198xxxxxxxx' or '+9198xxxxxxxx') - the service is responsible for
-        normalising it into a WhatsApp JID. Returns
-        {"success": True, "message_id": ...} or {"success": False, "error": ...}
-        - NEVER raises; caller (otm.whatsapp.lead.message._process_send())
-        reads the dict, matching every other client in this codebase's
-        contract."""
+        normalising it into a WhatsApp JID. `media`: optional dict
+        {"base64":..., "mime_type":..., "file_name":..., "media_type":
+        "image"|"video"|"document"} - same shape GroupBotClient sends, since
+        the Node service's /send and /send-direct share one _buildContent()
+        helper. Returns {"success": True, "message_id": ...} or
+        {"success": False, "error": ...} - NEVER raises; caller
+        (otm.whatsapp.lead.message._process_send()) reads the dict, matching
+        every other client in this codebase's contract."""
         if not self.base_url or not self.token:
             return {"success": False, "error": "WhatsApp connection is not configured."}
         if not phone_number:
             return {"success": False, "error": "No phone number to send to."}
         payload = {"to": phone_number, "message": message or ""}
+        if media:
+            payload["media"] = {
+                "base64": media.get("base64"),
+                "mimeType": media.get("mime_type"),
+                "fileName": media.get("file_name"),
+                "mediaType": media.get("media_type"),
+            }
         try:
             resp = requests.post(
                 self._url("/send-direct"), headers=self._headers(), json=payload, timeout=TIMEOUT

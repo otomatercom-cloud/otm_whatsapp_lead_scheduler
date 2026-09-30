@@ -21,6 +21,8 @@ class OtmWhatsappLeadScheduleWizard(models.TransientModel):
     )
     template_id = fields.Many2one("otm.whatsapp.lead.template", string="Template")
     message = fields.Text(required=True)
+    attachment_data = fields.Binary(string="Attachment")
+    attachment_filename = fields.Char(string="File Name")
     scheduled_datetime = fields.Datetime(
         required=True, default=lambda self: fields.Datetime.now(),
     )
@@ -41,6 +43,9 @@ class OtmWhatsappLeadScheduleWizard(models.TransientModel):
         for rec in self:
             if rec.template_id and rec.lead_id:
                 rec.message = rec.template_id.render(rec.lead_id)
+            if rec.template_id and rec.template_id.attachment_data:
+                rec.attachment_data = rec.template_id.attachment_data
+                rec.attachment_filename = rec.template_id.attachment_filename
 
     def action_confirm(self):
         self.ensure_one()
@@ -55,6 +60,8 @@ class OtmWhatsappLeadScheduleWizard(models.TransientModel):
                 "bot_id": self.bot_id.id,
                 "template_id": self.template_id.id if self.template_id else False,
                 "message": self.message,
+                "attachment_data": self.attachment_data,
+                "attachment_filename": self.attachment_filename,
                 "scheduled_datetime": self.scheduled_datetime,
             }
         )

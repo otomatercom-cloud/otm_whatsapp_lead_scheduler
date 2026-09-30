@@ -4,6 +4,8 @@ import logging
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+from . import whatsapp_lead_media_utils as media_utils
+
 _logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_RETRY = 3
@@ -74,6 +76,16 @@ class OtmWhatsappLeadMessage(models.Model):
     )
     message = fields.Text(required=True)
 
+    # ── Optional media (one per message - WhatsApp only carries one
+    # image/video/document per message) ─────────────────────────────────
+    attachment_data = fields.Binary(string="Attachment")
+    attachment_filename = fields.Char(string="File Name")
+    attachment_type = fields.Selection(
+        [("image", "Image"), ("video", "Video"), ("document", "Document")],
+        compute="_compute_attachment_type", store=True,
+        help="Detected automatically from the file's actual content, not just its name.",
+    )
+
     scheduled_datetime = fields.Datetime(string="Scheduled At", tracking=True, index=True)
 
     state = fields.Selection(
@@ -109,11 +121,27 @@ class OtmWhatsappLeadMessage(models.Model):
         "A message that is not a draft must have a scheduled date/time.",
     )
 
+    @api.depends("attachment_filename", "attachment_data")
+    def _compute_attachment_type(self):
+        for rec in self:
+            rec.attachment_type = (
+                media_utils.guess_attachment_type(rec.attachment_filename, rec.attachment_data)
+                if rec.attachment_data else False
+            )
+
+    @api.constrains("attachment_data", "attachment_type")
+    def _check_attachment_size(self):
+        for rec in self:
+            media_utils.check_attachment_size(rec.attachment_filename, rec.attachment_data, rec.attachment_type)
+
     @api.onchange("template_id")
     def _onchange_template_id(self):
         for rec in self:
             if rec.template_id and rec.lead_id:
                 rec.message = rec.template_id.render(rec.lead_id)
+            if rec.template_id and rec.template_id.attachment_data:
+                rec.attachment_data = rec.template_id.attachment_data
+                rec.attachment_filename = rec.template_id.attachment_filename
 
     @api.onchange("lead_id")
     def _onchange_lead_id(self):
@@ -225,7 +253,10 @@ class OtmWhatsappLeadMessage(models.Model):
 
         try:
             client = bot._get_client()
-            result = client.send_direct_message(self.lead_id.phone_number, self.message or "")
+            media = media_utils.build_media_payload(
+                self.attachment_filename, self.attachment_data, self.attachment_type
+            )
+            result = client.send_direct_message(self.lead_id.phone_number, self.message or "", media=media)
             if not result.get("success"):
                 self._mark_failed(result.get("error") or _("Unknown error from the WhatsApp bot service."))
                 return

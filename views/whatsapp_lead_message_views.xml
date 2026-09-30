@@ -44,6 +44,17 @@
                         <field name="message" nolabel="1" placeholder="Write the message text..."
                                readonly="state not in ('draft', 'scheduled')"/>
                     </group>
+                    <group string="Attachment (optional)">
+                        <field name="attachment_data" filename="attachment_filename"
+                               widget="image" options="{'size': [120, 120]}"
+                               invisible="attachment_type != 'image'"
+                               readonly="state not in ('draft', 'scheduled')"/>
+                        <field name="attachment_data" filename="attachment_filename"
+                               invisible="attachment_type == 'image'"
+                               readonly="state not in ('draft', 'scheduled')"/>
+                        <field name="attachment_filename" readonly="state not in ('draft', 'scheduled')"/>
+                        <field name="attachment_type" readonly="1" invisible="not attachment_type"/>
+                    </group>
                     <group string="Delivery" invisible="state in ('draft', 'scheduled')">
                         <group>
                             <field name="sent_date"/>

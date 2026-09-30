@@ -72,6 +72,8 @@ class LeadsForm(models.Model):
                 "template_id": trigger.template_id.id,
                 "trigger_id": trigger.id,
                 "message": trigger.template_id.render(self, officer=self.lead_owner.user_id),
+                "attachment_data": trigger.template_id.attachment_data,
+                "attachment_filename": trigger.template_id.attachment_filename,
                 "scheduled_datetime": fields.Datetime.now(),
                 "state": "processing",
             }
