@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Hangs off the same WhatsApp root menu as otm_whatsapp_group_scheduler's
+         "Group Messages", next to it. -->
+    <menuitem id="menu_whatsapp_lead_messages" name="Lead Messages"
+              parent="otm_whatsapp_coexistence.menu_whatsapp_root"
+              action="action_whatsapp_lead_message"
+              groups="group_whatsapp_lead_user"
+              sequence="60"/>
+
+    <menuitem id="menu_whatsapp_lead_messages_scheduled" name="Scheduled"
+              parent="menu_whatsapp_lead_messages"
+              action="action_whatsapp_lead_message_scheduled"
+              groups="group_whatsapp_lead_user"
+              sequence="10"/>
+    <menuitem id="menu_whatsapp_lead_messages_sent" name="Sent"
+              parent="menu_whatsapp_lead_messages"
+              action="action_whatsapp_lead_message_sent"
+              groups="group_whatsapp_lead_user"
+              sequence="20"/>
+    <menuitem id="menu_whatsapp_lead_messages_failed" name="Failed"
+              parent="menu_whatsapp_lead_messages"
+              action="action_whatsapp_lead_message_failed"
+              groups="group_whatsapp_lead_user"
+              sequence="30"/>
+
+    <menuitem id="menu_whatsapp_configuration_lead_bot" name="Lead Bot Connections"
+              parent="otm_whatsapp_coexistence.menu_whatsapp_configuration"
+              action="action_whatsapp_lead_bot"
+              groups="group_whatsapp_lead_manager"
+              sequence="45"/>
+    <menuitem id="menu_whatsapp_configuration_lead_template" name="Lead Message Templates"
+              parent="otm_whatsapp_coexistence.menu_whatsapp_configuration"
+              action="action_whatsapp_lead_template"
+              groups="group_whatsapp_lead_manager"
+              sequence="46"/>
+    <menuitem id="menu_whatsapp_configuration_lead_stage_trigger" name="Lead Stage Trigger Buttons"
+              parent="otm_whatsapp_coexistence.menu_whatsapp_configuration"
+              action="action_whatsapp_lead_stage_trigger"
+              groups="group_whatsapp_lead_manager"
+              sequence="47"/>
+    <menuitem id="menu_whatsapp_configuration_lead_scheduler_settings" name="Lead Scheduler Settings"
+              parent="otm_whatsapp_coexistence.menu_whatsapp_configuration"
+              action="action_whatsapp_lead_scheduler_settings"
+              groups="group_whatsapp_lead_manager"
+              sequence="48"/>
+</odoo>

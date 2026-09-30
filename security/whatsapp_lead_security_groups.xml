@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Same privilege category as otm_whatsapp_coexistence's own WhatsApp
+         groups (shows together under Settings > Users > Groups), but these
+         are separate groups: lead-message access is independent of
+         1:1/broadcast/group access. Membership is driven by custom_leads_19's
+         own Admission Officer / Manager groups below, not assigned by hand
+         per-user, so this module never re-decides who is an Admission
+         Officer. -->
+    <record id="group_whatsapp_lead_user" model="res.groups">
+        <field name="name">WhatsApp Lead Messages / User</field>
+        <field name="privilege_id" ref="otm_whatsapp_coexistence.whatsapp_privilege"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Can use the stage-triggered send button, schedule/view/cancel
+            their own leads' WhatsApp messages, and view (not edit) templates. Automatically
+            granted to every custom_leads_19 Admission Officer (see the implied_ids update
+            below - never assigned by hand per-user).</field>
+    </record>
+
+    <record id="group_whatsapp_lead_manager" model="res.groups">
+        <field name="name">WhatsApp Lead Messages / Manager</field>
+        <field name="privilege_id" ref="otm_whatsapp_coexistence.whatsapp_privilege"/>
+        <field name="implied_ids" eval="[(4, ref('group_whatsapp_lead_user'))]"/>
+        <field name="comment">Can also manage Lead Bot Connections (one per officer),
+            Templates, and the Stage Trigger list, and see every officer's lead
+            messages. Automatically granted to every custom_leads_19 Manager (see the
+            implied_ids update below), plus the admin.</field>
+        <field name="user_ids" eval="[(4, ref('base.user_admin'))]"/>
+    </record>
+
+    <!-- Grant automatically by extending custom_leads_19's OWN groups, rather
+         than assigning users here by hand: every current and future
+         Admission Officer / Manager gets WhatsApp lead-message access the
+         moment they're added to those groups, with zero upkeep in this
+         module. -->
+    <record id="custom_leads_19.group_lead_users" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_whatsapp_lead_user'))]"/>
+    </record>
+    <record id="custom_leads_19.group_lead_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_whatsapp_lead_manager'))]"/>
+    </record>
+</odoo>

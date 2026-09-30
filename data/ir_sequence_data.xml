@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_whatsapp_lead_message" model="ir.sequence">
+        <field name="name">WhatsApp Lead Message</field>
+        <field name="code">otm.whatsapp.lead.message</field>
+        <field name="prefix">OWLM/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

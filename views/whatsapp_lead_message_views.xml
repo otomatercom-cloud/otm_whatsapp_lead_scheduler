@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_whatsapp_lead_message_form" model="ir.ui.view">
+        <field name="name">otm.whatsapp.lead.message.form</field>
+        <field name="model">otm.whatsapp.lead.message</field>
+        <field name="arch" type="xml">
+            <form string="WhatsApp Lead Message">
+                <header>
+                    <button name="action_schedule" type="object" string="Schedule" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_send_now" type="object" string="Send Now" class="btn-primary"
+                            invisible="state not in ('draft', 'scheduled')"
+                            confirm="Send this message immediately, without waiting for the scheduled time?"/>
+                    <button name="action_retry" type="object" string="Retry" class="btn-primary"
+                            invisible="state != 'failed'"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state in ('sent', 'cancelled')"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft"
+                            invisible="state not in ('cancelled', 'failed')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,scheduled,processing,sent"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Failed" bg_color="text-bg-danger" invisible="state != 'failed'"/>
+                    <widget name="web_ribbon" title="Cancelled" bg_color="text-bg-secondary" invisible="state != 'cancelled'"/>
+                    <div class="oe_title">
+                        <h1><field name="reference" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Send To">
+                            <field name="lead_id" readonly="state not in ('draft',)"/>
+                            <field name="phone_number"/>
+                            <field name="lead_owner_id"/>
+                            <field name="bot_id" placeholder="Uses the lead owner's own connection"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Schedule">
+                            <field name="scheduled_datetime" readonly="state not in ('draft', 'scheduled')"/>
+                            <field name="template_id" readonly="state not in ('draft', 'scheduled')"/>
+                            <field name="trigger_id" invisible="not trigger_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Message" name="message_group">
+                        <field name="message" nolabel="1" placeholder="Write the message text..."
+                               readonly="state not in ('draft', 'scheduled')"/>
+                    </group>
+                    <group string="Delivery" invisible="state in ('draft', 'scheduled')">
+                        <group>
+                            <field name="sent_date"/>
+                            <field name="last_attempt_date"/>
+                        </group>
+                        <group>
+                            <field name="retry_count"/>
+                            <field name="max_retry_count"/>
+                        </group>
+                    </group>
+                    <group string="Error" invisible="not last_error">
+                        <field name="last_error" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_whatsapp_lead_message_list" model="ir.ui.view">
+        <field name="name">otm.whatsapp.lead.message.list</field>
+        <field name="model">otm.whatsapp.lead.message</field>
+        <field name="arch" type="xml">
+            <list string="WhatsApp Lead Messages" decoration-danger="state == 'failed'"
+                  decoration-success="state == 'sent'" decoration-muted="state == 'cancelled'">
+                <field name="reference"/>
+                <field name="lead_id"/>
+                <field name="phone_number"/>
+                <field name="lead_owner_id"/>
+                <field name="scheduled_datetime"/>
+                <field name="state"/>
+                <field name="retry_count"/>
+                <field name="sent_date" optional="hide"/>
+                <field name="last_error" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_whatsapp_lead_message_search" model="ir.ui.view">
+        <field name="name">otm.whatsapp.lead.message.search</field>
+        <field name="model">otm.whatsapp.lead.message</field>
+        <field name="arch" type="xml">
+            <search string="WhatsApp Lead Messages">
+                <field name="reference"/>
+                <field name="lead_id"/>
+                <field name="phone_number"/>
+                <field name="message"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="scheduled" string="Scheduled" domain="[('state', '=', 'scheduled')]"/>
+                <filter name="processing" string="Processing" domain="[('state', '=', 'processing')]"/>
+                <filter name="sent" string="Sent" domain="[('state', '=', 'sent')]"/>
+                <filter name="failed" string="Failed" domain="[('state', '=', 'failed')]"/>
+                <filter name="cancelled" string="Cancelled" domain="[('state', '=', 'cancelled')]"/>
+                <separator/>
+                <filter name="today" string="Scheduled Today"
+                        domain="[('scheduled_datetime', '&gt;=', datetime.datetime.combine(context_today(), datetime.time(0,0,0))),
+                                 ('scheduled_datetime', '&lt;', datetime.datetime.combine(context_today() + datetime.timedelta(days=1), datetime.time(0,0,0)))]"/>
+                <separator/>
+                <group>
+                    <filter name="group_by_officer" string="Admission Officer" context="{'group_by': 'lead_owner_id'}"/>
+                    <filter name="group_by_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_by_scheduled_date" string="Scheduled Date" context="{'group_by': 'scheduled_datetime:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_whatsapp_lead_message" model="ir.actions.act_window">
+        <field name="name">Lead Messages</field>
+        <field name="res_model">otm.whatsapp.lead.message</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_scheduled': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Schedule a WhatsApp message to a lead</p>
+            <p>One-time, sent through that lead's own Admission Officer's WhatsApp number.</p>
+        </field>
+    </record>
+
+    <record id="action_whatsapp_lead_message_scheduled" model="ir.actions.act_window">
+        <field name="name">Scheduled</field>
+        <field name="res_model">otm.whatsapp.lead.message</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', 'in', ('draft', 'scheduled', 'processing'))]</field>
+        <field name="context">{'search_default_scheduled': 1}</field>
+    </record>
+
+    <record id="action_whatsapp_lead_message_sent" model="ir.actions.act_window">
+        <field name="name">Sent</field>
+        <field name="res_model">otm.whatsapp.lead.message</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'sent')]</field>
+    </record>
+
+    <record id="action_whatsapp_lead_message_failed" model="ir.actions.act_window">
+        <field name="name">Failed</field>
+        <field name="res_model">otm.whatsapp.lead.message</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'failed')]</field>
+    </record>
+</odoo>

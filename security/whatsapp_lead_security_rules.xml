@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Multi-company scoping, same convention as otm_whatsapp_group_scheduler. -->
+    <record id="rule_whatsapp_lead_bot_company" model="ir.rule">
+        <field name="name">WhatsApp Lead Bot: multi-company</field>
+        <field name="model_id" ref="model_otm_whatsapp_lead_bot"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_whatsapp_lead_template_company" model="ir.rule">
+        <field name="name">WhatsApp Lead Template: multi-company</field>
+        <field name="model_id" ref="model_otm_whatsapp_lead_template"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_whatsapp_lead_stage_trigger_company" model="ir.rule">
+        <field name="name">WhatsApp Lead Stage Trigger: multi-company</field>
+        <field name="model_id" ref="model_otm_whatsapp_lead_stage_trigger"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_whatsapp_lead_message_company" model="ir.rule">
+        <field name="name">WhatsApp Lead Message: multi-company</field>
+        <field name="model_id" ref="model_otm_whatsapp_lead_message"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <!-- A plain User (Admission Officer) only sees messages for leads THEY
+         own - never another officer's customer conversations, and never
+         another officer's bot connection either. A Manager (see the
+         group's implied_ids) is not affected by these rules and keeps
+         seeing everyone's, via the implicit global rule. -->
+    <record id="rule_whatsapp_lead_message_own" model="ir.rule">
+        <field name="name">WhatsApp Lead Message: User sees only their own leads' messages</field>
+        <field name="model_id" ref="model_otm_whatsapp_lead_message"/>
+        <field name="groups" eval="[(4, ref('group_whatsapp_lead_user'))]"/>
+        <field name="domain_force">[('lead_id.lead_owner.user_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_whatsapp_lead_bot_own" model="ir.rule">
+        <field name="name">WhatsApp Lead Bot: User sees only their own connection</field>
+        <field name="model_id" ref="model_otm_whatsapp_lead_bot"/>
+        <field name="groups" eval="[(4, ref('group_whatsapp_lead_user'))]"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+    </record>
+</odoo>

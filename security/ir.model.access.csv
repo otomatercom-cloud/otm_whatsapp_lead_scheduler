@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_otm_whatsapp_lead_bot_user,otm.whatsapp.lead.bot user,model_otm_whatsapp_lead_bot,group_whatsapp_lead_user,1,0,0,0
+access_otm_whatsapp_lead_bot_manager,otm.whatsapp.lead.bot manager,model_otm_whatsapp_lead_bot,group_whatsapp_lead_manager,1,1,1,1
+access_otm_whatsapp_lead_template_user,otm.whatsapp.lead.template user,model_otm_whatsapp_lead_template,group_whatsapp_lead_user,1,0,0,0
+access_otm_whatsapp_lead_template_manager,otm.whatsapp.lead.template manager,model_otm_whatsapp_lead_template,group_whatsapp_lead_manager,1,1,1,1
+access_otm_whatsapp_lead_stage_trigger_user,otm.whatsapp.lead.stage.trigger user,model_otm_whatsapp_lead_stage_trigger,group_whatsapp_lead_user,1,0,0,0
+access_otm_whatsapp_lead_stage_trigger_manager,otm.whatsapp.lead.stage.trigger manager,model_otm_whatsapp_lead_stage_trigger,group_whatsapp_lead_manager,1,1,1,1
+access_otm_whatsapp_lead_message_user,otm.whatsapp.lead.message user,model_otm_whatsapp_lead_message,group_whatsapp_lead_user,1,1,1,0
+access_otm_whatsapp_lead_message_manager,otm.whatsapp.lead.message manager,model_otm_whatsapp_lead_message,group_whatsapp_lead_manager,1,1,1,1
+access_otm_whatsapp_lead_schedule_wizard_user,otm.whatsapp.lead.schedule.wizard user,model_otm_whatsapp_lead_schedule_wizard,group_whatsapp_lead_user,1,1,1,1

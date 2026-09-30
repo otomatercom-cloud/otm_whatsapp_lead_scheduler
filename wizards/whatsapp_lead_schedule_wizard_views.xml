@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_whatsapp_lead_schedule_wizard_form" model="ir.ui.view">
+        <field name="name">otm.whatsapp.lead.schedule.wizard.form</field>
+        <field name="model">otm.whatsapp.lead.schedule.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Schedule WhatsApp Message">
+                <group>
+                    <field name="lead_id" readonly="1"/>
+                    <field name="phone_number" readonly="1"/>
+                    <field name="bot_id" placeholder="This officer has no WhatsApp connection yet"/>
+                    <field name="template_id"/>
+                    <field name="scheduled_datetime"/>
+                </group>
+                <group string="Message">
+                    <field name="message" nolabel="1" placeholder="Write the message text..."/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Schedule" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_whatsapp_lead_stage_trigger_list" model="ir.ui.view">
+        <field name="name">otm.whatsapp.lead.stage.trigger.list</field>
+        <field name="model">otm.whatsapp.lead.stage.trigger</field>
+        <field name="arch" type="xml">
+            <list string="WhatsApp Stage Trigger Buttons" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="lead_quality"/>
+                <field name="button_label"/>
+                <field name="template_id"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_whatsapp_lead_stage_trigger" model="ir.actions.act_window">
+        <field name="name">Stage Trigger Buttons</field>
+        <field name="res_model">otm.whatsapp.lead.stage.trigger</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a stage-triggered WhatsApp button</p>
+            <p>Pick a Lead Quality (stage), give the button a label, and pick which template it
+                sends. The lead form shows this button automatically whenever a lead is at that
+                stage - no view or code change needed to add another one later.</p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_whatsapp_lead_bot_form" model="ir.ui.view">
+        <field name="name">otm.whatsapp.lead.bot.form</field>
+        <field name="model">otm.whatsapp.lead.bot</field>
+        <field name="arch" type="xml">
+            <form string="WhatsApp Lead Bot Connection">
+                <header>
+                    <button name="action_check_connection" type="object" string="Check Connection" class="btn-secondary"/>
+                    <button name="action_refresh_qr" type="object" string="Refresh QR Code" class="btn-secondary"
+                            invisible="connection_state not in ('not_connected', 'qr_pending', 'error')"/>
+                    <field name="connection_state" widget="statusbar" statusbar_visible="not_connected,qr_pending,connected"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-warning" role="alert">
+                        This connects to an <strong>unofficial</strong> WhatsApp Web automation service
+                        (not Meta's Cloud API). Using it violates WhatsApp's Terms of Service and can get
+                        the paired number banned - use a disposable number dedicated only to this officer,
+                        never their Coexistence/Cloud API number. Each officer must have their OWN instance
+                        of the bot service running on its own port - never share one instance/number
+                        between two officers.
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Lead Bot - Anjali"/></h1>
+                    </div>
+                    <group>
+                        <group string="Officer &amp; Connection">
+                            <field name="user_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="base_url"/>
+                            <field name="api_token" password="True" groups="otm_whatsapp_coexistence.group_whatsapp_administrator"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Status">
+                            <field name="phone_number"/>
+                            <field name="last_check"/>
+                            <field name="last_error" invisible="not last_error"/>
+                        </group>
+                    </group>
+                    <group string="Pairing" invisible="connection_state != 'qr_pending' or not qr_image">
+                        <field name="qr_image" widget="image" nolabel="1" options="{'size': [300, 300]}"/>
+                        <div class="text-muted">
+                            On the officer's own phone: WhatsApp &gt; Settings &gt; Linked Devices &gt; Link
+                            a Device, then scan this code before it expires.
+                        </div>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_whatsapp_lead_bot_list" model="ir.ui.view">
+        <field name="name">otm.whatsapp.lead.bot.list</field>
+        <field name="model">otm.whatsapp.lead.bot</field>
+        <field name="arch" type="xml">
+            <list string="WhatsApp Lead Bot Connections">
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="base_url"/>
+                <field name="phone_number"/>
+                <field name="connection_state" decoration-success="connection_state == 'connected'"
+                       decoration-warning="connection_state == 'qr_pending'"
+                       decoration-danger="connection_state == 'error'"/>
+                <field name="last_check"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_whatsapp_lead_bot" model="ir.actions.act_window">
+        <field name="name">Lead Bot Connections</field>
+        <field name="res_model">otm.whatsapp.lead.bot</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Connect an Admission Officer's own WhatsApp number</p>
+            <p>One record per officer. Point it at that officer's own running
+                <code>otm-whatsapp-group-bot-service</code> instance (its own port/auth folder), then
+                Check Connection and have them scan the QR code with their own phone.</p>
+        </field>
+    </record>
+</odoo>
