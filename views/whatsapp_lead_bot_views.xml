@@ -68,16 +68,18 @@
                             <field name="company_id" groups="base.group_multi_company"/>
                             <field name="provision_slug" invisible="base_url"
                                    placeholder="auto-suggested from officer's login"/>
-                            <!-- Required only once the record already exists AND isn't going
-                                 through automatic provisioning - NOT on the very first save,
-                                 otherwise clicking "Create Bot Instance" on a brand-new record
-                                 (which needs to save with this still blank) would be blocked by
-                                 this same validation before the button's own logic even runs. -->
-                            <field name="base_url"
-                                   required="id and provision_state not in ('requested', 'provisioning')"/>
+                            <!-- Deliberately NOT required at the view level (tried this once -
+                                 see the model's base_url comment for why it's not required at
+                                 the DB level either). Any "only when manually editing" condition
+                                 also blocks the legitimate case of clearing an EXISTING record's
+                                 Service URL/Token to retry Create Bot Instance - a real Odoo
+                                 record already has an id, so an "id and ..." condition still
+                                 fires and blocks the save before the button's logic runs. The
+                                 functional check (a clear error from Check Connection / send if
+                                 these are blank) is enough on its own. -->
+                            <field name="base_url"/>
                             <field name="api_token" password="True"
-                                   groups="otm_whatsapp_coexistence.group_whatsapp_administrator"
-                                   required="id and provision_state not in ('requested', 'provisioning')"/>
+                                   groups="otm_whatsapp_coexistence.group_whatsapp_administrator"/>
                             <field name="active"/>
                         </group>
                         <group string="Status">
