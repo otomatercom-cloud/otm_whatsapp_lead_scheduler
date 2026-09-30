@@ -24,19 +24,41 @@
 
     <!-- A plain User (Admission Officer) only sees messages for leads THEY
          own - never another officer's customer conversations, and never
-         another officer's bot connection either. A Manager (see the
-         group's implied_ids) is not affected by these rules and keeps
-         seeing everyone's, via the implicit global rule. -->
+         another officer's bot connection either.
+
+         group_whatsapp_lead_manager IMPLIES group_whatsapp_lead_user (see
+         the security groups file), so a Manager (including the admin) is
+         a member of BOTH groups at once - Odoo ORs together every
+         group-scoped rule that applies to a user's groups, so without an
+         explicit unrestricted rule for the manager group here, the
+         restrictive "own only" rule above would be the ONLY one that
+         applies and would wrongly block managers/admins too (this bit a
+         real admin user during testing: "Access Error ... doesn't have
+         'create' access", caused by exactly this missing rule). The pair
+         of rules below fixes that: manager sees/manages everyone's,
+         officer sees only their own, and Odoo takes the union. -->
     <record id="rule_whatsapp_lead_message_own" model="ir.rule">
         <field name="name">WhatsApp Lead Message: User sees only their own leads' messages</field>
         <field name="model_id" ref="model_otm_whatsapp_lead_message"/>
         <field name="groups" eval="[(4, ref('group_whatsapp_lead_user'))]"/>
         <field name="domain_force">[('lead_id.lead_owner.user_id', '=', user.id)]</field>
     </record>
+    <record id="rule_whatsapp_lead_message_manager" model="ir.rule">
+        <field name="name">WhatsApp Lead Message: Manager sees/manages every officer's</field>
+        <field name="model_id" ref="model_otm_whatsapp_lead_message"/>
+        <field name="groups" eval="[(4, ref('group_whatsapp_lead_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
     <record id="rule_whatsapp_lead_bot_own" model="ir.rule">
         <field name="name">WhatsApp Lead Bot: User sees only their own connection</field>
         <field name="model_id" ref="model_otm_whatsapp_lead_bot"/>
         <field name="groups" eval="[(4, ref('group_whatsapp_lead_user'))]"/>
         <field name="domain_force">[('user_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_whatsapp_lead_bot_manager" model="ir.rule">
+        <field name="name">WhatsApp Lead Bot: Manager sees/manages every officer's connection</field>
+        <field name="model_id" ref="model_otm_whatsapp_lead_bot"/>
+        <field name="groups" eval="[(4, ref('group_whatsapp_lead_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
     </record>
 </odoo>
