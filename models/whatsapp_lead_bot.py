@@ -42,11 +42,20 @@ class OtmWhatsappLeadBot(models.Model):
     )
 
     base_url = fields.Char(
-        string="Service URL", required=True, tracking=True,
+        string="Service URL", tracking=True,
+        # NOT required at the model/DB level (on purpose): a brand-new
+        # record must be saveable with this still blank, so that clicking
+        # "Create Bot Instance" (which needs a saved record to act on)
+        # works before the officer's instance/port even exists yet. The
+        # UI still marks it visually required once you're on the manual
+        # path (see the view), and _require_connected()/the client already
+        # give a clear error if anything tries to actually send through a
+        # connection that's still unconfigured.
         help="Base URL of THIS officer's own otm-whatsapp-group-bot-service instance, "
         "e.g. http://127.0.0.1:8731 - each officer's number is a separate instance "
         "on its own port, never a shared one. Keep this on a private/internal "
-        "network, never exposed publicly.",
+        "network, never exposed publicly. Leave blank and use 'Create Bot Instance' "
+        "to have this filled in automatically instead.",
     )
     api_token = fields.Char(
         string="API Token", groups="otm_whatsapp_coexistence.group_whatsapp_administrator",
