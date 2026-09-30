@@ -13,6 +13,9 @@
                     <button name="action_check_connection" type="object" string="Check Connection" class="btn-secondary"/>
                     <button name="action_refresh_qr" type="object" string="Refresh QR Code" class="btn-secondary"
                             invisible="connection_state not in ('not_connected', 'qr_pending', 'error')"/>
+                    <button name="action_request_removal" type="object" string="Remove Bot Instance"
+                            class="btn-secondary" confirm="This will disconnect this officer immediately and permanently delete their WhatsApp pairing on the server. They will need to scan a fresh QR code if re-added later. Continue?"
+                            invisible="not provision_slug or provision_state in ('requested', 'provisioning', 'removal_requested', 'removing', 'removed')"/>
                     <field name="connection_state" widget="statusbar" statusbar_visible="not_connected,qr_pending,connected"/>
                 </header>
                 <sheet>
@@ -39,6 +42,21 @@
                          invisible="provision_state != 'done' or connection_state == 'connected'">
                         Bot instance created. Click <strong>Check Connection</strong> below, then have the
                         officer scan the QR code with their own phone.
+                    </div>
+                    <div class="alert alert-info" role="alert"
+                         invisible="provision_state not in ('removal_requested', 'removing')">
+                        Removal requested. A background job on the server will stop and delete this
+                        officer's bot instance automatically (usually within a few minutes). This
+                        connection is already deactivated and cannot send messages in the meantime.
+                    </div>
+                    <div class="alert alert-secondary" role="alert" invisible="provision_state != 'removed'">
+                        This officer's bot instance has been removed from the server. Their WhatsApp
+                        pairing was deleted - re-adding them later requires a fresh QR scan.
+                    </div>
+                    <div class="alert alert-danger" role="alert" invisible="provision_state != 'removal_error'">
+                        Automatic removal failed: <field name="provision_error" nolabel="1" readonly="1"/>
+                        <br/>Remove the instance manually on the server (teardown_officer_bot.sh), or
+                        retry.
                     </div>
                     <div class="oe_title">
                         <label for="name"/>
@@ -83,8 +101,9 @@
                 <field name="base_url"/>
                 <field name="phone_number"/>
                 <field name="provision_state" optional="hide"
-                       decoration-warning="provision_state in ('requested', 'provisioning')"
-                       decoration-danger="provision_state == 'error'"/>
+                       decoration-warning="provision_state in ('requested', 'provisioning', 'removal_requested', 'removing')"
+                       decoration-danger="provision_state in ('error', 'removal_error')"
+                       decoration-muted="provision_state == 'removed'"/>
                 <field name="connection_state" decoration-success="connection_state == 'connected'"
                        decoration-warning="connection_state == 'qr_pending'"
                        decoration-danger="connection_state == 'error'"/>

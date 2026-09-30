@@ -96,11 +96,16 @@ class OtmWhatsappLeadBot(models.Model):
             ("provisioning", "Provisioning..."),
             ("done", "Provisioned"),
             ("error", "Failed"),
+            ("removal_requested", "Removal Requested"),
+            ("removing", "Removing..."),
+            ("removed", "Removed"),
+            ("removal_error", "Removal Failed"),
         ],
         default="none", tracking=True, copy=False,
-        help="Status of automatically creating this officer's own bot-service "
-        "instance on the server. Picked up and actioned by a script running "
-        "outside Odoo (see bot_service_update/provisioner.py) - not instant.",
+        help="Status of automatically creating/removing this officer's own "
+        "bot-service instance on the server. Picked up and actioned by a "
+        "script running outside Odoo (see bot_service_update/provisioner.py) "
+        "- not instant.",
     )
     provision_slug = fields.Char(
         string="Instance Slug", copy=False,
@@ -144,6 +149,32 @@ class OtmWhatsappLeadBot(models.Model):
                     "provision_state": "requested",
                     "provision_error": False,
                     "provision_requested_date": fields.Datetime.now(),
+                }
+            )
+        return True
+
+    def action_request_removal(self):
+        """Button: ask the external provisioner to tear down this officer's
+        bot-service instance (PM2 process + folder) when they leave / are
+        offboarded. Deactivates the connection and blanks the credentials
+        IMMEDIATELY so nothing can send through it while the teardown is
+        still pending - the actual server-side cleanup (stop PM2, delete
+        the folder) happens later, off-server, done by provisioner.py."""
+        for rec in self:
+            if not rec.provision_slug:
+                raise UserError(
+                    _("No instance slug recorded on this connection - nothing to remove "
+                      "automatically. Remove it manually on the server instead.")
+                )
+            rec.write(
+                {
+                    "provision_state": "removal_requested",
+                    "provision_error": False,
+                    "provision_requested_date": fields.Datetime.now(),
+                    "active": False,
+                    "base_url": False,
+                    "api_token": False,
+                    "connection_state": "not_connected",
                 }
             )
         return True
