@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import logging
+import re
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
@@ -76,6 +77,76 @@ class OtmWhatsappLeadBot(models.Model):
         "unique(user_id)",
         "This Admission Officer already has a WhatsApp Lead Bot connection configured.",
     )
+
+    # --- Provisioning (creating the officer's own bot instance on the
+    # server) -------------------------------------------------------------
+    # Odoo NEVER runs shell commands or touches PM2 itself - that would
+    # mean the web/cron process has real shell execution rights on the
+    # server, which is a serious privilege-escalation risk. Instead this
+    # just records a REQUEST. A separate script (bot_service_update/
+    # provisioner.py), run by system cron as whichever Linux user already
+    # owns PM2/npm on this box, polls for 'requested' records over
+    # Odoo's normal external API, does the actual work
+    # (setup_officer_bot.sh), and writes the resulting base_url/api_token
+    # back here the same way any external client would.
+    provision_state = fields.Selection(
+        [
+            ("none", "Not Requested"),
+            ("requested", "Requested"),
+            ("provisioning", "Provisioning..."),
+            ("done", "Provisioned"),
+            ("error", "Failed"),
+        ],
+        default="none", tracking=True, copy=False,
+        help="Status of automatically creating this officer's own bot-service "
+        "instance on the server. Picked up and actioned by a script running "
+        "outside Odoo (see bot_service_update/provisioner.py) - not instant.",
+    )
+    provision_slug = fields.Char(
+        string="Instance Slug", copy=False,
+        help="Used to name the server-side folder/PM2 process for this officer's "
+        "instance, e.g. 'priya' -> otm_whatsapp_lead_bot_priya, PM2 process "
+        "whatsapp-lead-priya. Auto-suggested from the officer's login; "
+        "letters, numbers and dashes only.",
+    )
+    provision_error = fields.Text(readonly=True, copy=False)
+    provision_requested_date = fields.Datetime(readonly=True, copy=False)
+    provision_done_date = fields.Datetime(readonly=True, copy=False)
+
+    @api.onchange("user_id")
+    def _onchange_user_id_suggest_slug(self):
+        for rec in self:
+            if rec.user_id and not rec.provision_slug:
+                rec.provision_slug = rec._slugify(rec.user_id.login or rec.user_id.name)
+
+    @staticmethod
+    def _slugify(text):
+        text = (text or "").split("@")[0].lower()
+        text = re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+        return text[:24] or "officer"
+
+    def action_request_provisioning(self):
+        """Button: ask the external provisioner to create this officer's
+        bot-service instance automatically. Does NOT touch the server
+        itself - just flags the record; provisioner.py (run by system
+        cron, outside Odoo) does the actual work, usually within a few
+        minutes depending on how often that cron runs."""
+        for rec in self:
+            if rec.base_url or rec.api_token:
+                raise UserError(
+                    _("This connection already has a Service URL/API Token set. "
+                      "Provisioning is only for a brand-new, unconfigured connection.")
+                )
+            if not rec.provision_slug:
+                rec.provision_slug = rec._slugify(rec.user_id.login or rec.user_id.name)
+            rec.write(
+                {
+                    "provision_state": "requested",
+                    "provision_error": False,
+                    "provision_requested_date": fields.Datetime.now(),
+                }
+            )
+        return True
 
     def _get_client(self):
         self.ensure_one()
