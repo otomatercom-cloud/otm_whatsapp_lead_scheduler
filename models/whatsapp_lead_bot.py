@@ -156,10 +156,13 @@ class OtmWhatsappLeadBot(models.Model):
     def action_request_removal(self):
         """Button: ask the external provisioner to tear down this officer's
         bot-service instance (PM2 process + folder) when they leave / are
-        offboarded. Deactivates the connection and blanks the credentials
-        IMMEDIATELY so nothing can send through it while the teardown is
-        still pending - the actual server-side cleanup (stop PM2, delete
-        the folder) happens later, off-server, done by provisioner.py."""
+        offboarded. Deactivates the connection IMMEDIATELY so nothing can
+        send through it while the teardown is still pending - the actual
+        server-side cleanup (stop PM2, delete the folder) happens later,
+        off-server, done by provisioner.py. Service URL/API Token are left
+        as-is (both are required fields and pointless to clear anyway -
+        once 'active' is False, get_for_user()'s search already excludes
+        this record from being used to send anything)."""
         for rec in self:
             if not rec.provision_slug:
                 raise UserError(
@@ -172,8 +175,6 @@ class OtmWhatsappLeadBot(models.Model):
                     "provision_error": False,
                     "provision_requested_date": fields.Datetime.now(),
                     "active": False,
-                    "base_url": False,
-                    "api_token": False,
                     "connection_state": "not_connected",
                 }
             )
