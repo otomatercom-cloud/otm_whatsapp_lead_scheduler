@@ -44,7 +44,14 @@ class ResConfigSettings(models.TransientModel):
         "Chatbot module (Settings there). Only consulted when no FAQ below matches. "
         "Leave blank to use FAQs only.",
     )
-    otm_lead_chatbot_fallback_message = fields.Text(
+    # ODOO 19 RULE: res.config.settings + config_parameter only accepts
+    # boolean/integer/float/char/selection/many2one/datetime - NOT Text.
+    # ir_http raises "Field ... must have type ..." (a real crash, not a
+    # lint warning) the moment this screen is opened if a Text field here
+    # has config_parameter set. Char has no practical length limit in
+    # Postgres/Odoo (unless a `size` is given), so it's the correct type
+    # for a long fallback message too, never Text, on this specific model.
+    otm_lead_chatbot_fallback_message = fields.Char(
         string="Fallback Message",
         config_parameter="otm_whatsapp_lead_scheduler.chatbot_fallback_message",
         help="Sent only when neither a FAQ nor the AI provider (if configured) produced "

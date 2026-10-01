@@ -17,7 +17,10 @@
                     <group string="Reply Chatbot">
                         <field name="otm_lead_chatbot_enabled"/>
                         <field name="otm_lead_chatbot_ai_provider_id"/>
-                        <field name="otm_lead_chatbot_fallback_message"/>
+                        <!-- widget="text" only changes the editor to a textarea - the
+                             field itself stays Char (required for config_parameter, see
+                             the model's own comment on this field). -->
+                        <field name="otm_lead_chatbot_fallback_message" widget="text"/>
                     </group>
                 </sheet>
                 <footer>
