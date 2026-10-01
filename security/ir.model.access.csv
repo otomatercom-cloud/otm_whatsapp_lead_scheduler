@@ -8,3 +8,5 @@ access_otm_whatsapp_lead_stage_trigger_manager,otm.whatsapp.lead.stage.trigger m
 access_otm_whatsapp_lead_message_user,otm.whatsapp.lead.message user,model_otm_whatsapp_lead_message,group_whatsapp_lead_user,1,1,1,0
 access_otm_whatsapp_lead_message_manager,otm.whatsapp.lead.message manager,model_otm_whatsapp_lead_message,group_whatsapp_lead_manager,1,1,1,1
 access_otm_whatsapp_lead_schedule_wizard_user,otm.whatsapp.lead.schedule.wizard user,model_otm_whatsapp_lead_schedule_wizard,group_whatsapp_lead_user,1,1,1,1
+access_otm_whatsapp_lead_chatbot_faq_user,otm.whatsapp.lead.chatbot.faq user,model_otm_whatsapp_lead_chatbot_faq,group_whatsapp_lead_user,1,0,0,0
+access_otm_whatsapp_lead_chatbot_faq_manager,otm.whatsapp.lead.chatbot.faq manager,model_otm_whatsapp_lead_chatbot_faq,group_whatsapp_lead_manager,1,1,1,1

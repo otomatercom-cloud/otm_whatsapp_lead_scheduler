@@ -44,4 +44,9 @@
               action="action_whatsapp_lead_scheduler_settings"
               groups="group_whatsapp_lead_manager"
               sequence="48"/>
+    <menuitem id="menu_whatsapp_configuration_lead_chatbot_faq" name="Reply Chatbot FAQs"
+              parent="otm_whatsapp_coexistence.menu_whatsapp_configuration"
+              action="action_whatsapp_lead_chatbot_faq"
+              groups="group_whatsapp_lead_manager"
+              sequence="49"/>
 </odoo>

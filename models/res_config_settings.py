@@ -26,3 +26,28 @@ class ResConfigSettings(models.TransientModel):
         help="Default 'Maximum Retries' for newly created lead messages. Each message can "
         "still override this individually.",
     )
+
+    otm_lead_chatbot_enabled = fields.Boolean(
+        string="Enable Reply Chatbot",
+        config_parameter="otm_whatsapp_lead_scheduler.chatbot_enabled",
+        default=False,
+        help="When a customer directly quote-replies (on WhatsApp) to a stage-triggered "
+        "template this module sent, check the FAQ list below (and the AI provider if "
+        "set) and auto-reply through that same officer's number. Off by default - the "
+        "officer's own WhatsApp number keeps working normally either way; this only "
+        "controls the automatic reply-to-reply behavior.",
+    )
+    otm_lead_chatbot_ai_provider_id = fields.Many2one(
+        "otm.whatsapp.ai.provider", string="AI Provider",
+        config_parameter="otm_whatsapp_lead_scheduler.chatbot_ai_provider_id",
+        help="Optional. Reuses the same AI Provider configuration as the WhatsApp "
+        "Chatbot module (Settings there). Only consulted when no FAQ below matches. "
+        "Leave blank to use FAQs only.",
+    )
+    otm_lead_chatbot_fallback_message = fields.Text(
+        string="Fallback Message",
+        config_parameter="otm_whatsapp_lead_scheduler.chatbot_fallback_message",
+        help="Sent only when neither a FAQ nor the AI provider (if configured) produced "
+        "an answer. Leave blank to send nothing in that case - the reply is still logged "
+        "so the officer sees it, they just won't get an automatic WhatsApp reply.",
+    )

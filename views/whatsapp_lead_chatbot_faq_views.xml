@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_whatsapp_lead_chatbot_faq_list" model="ir.ui.view">
+        <field name="name">otm.whatsapp.lead.chatbot.faq.list</field>
+        <field name="model">otm.whatsapp.lead.chatbot.faq</field>
+        <field name="arch" type="xml">
+            <list string="WhatsApp Lead Chatbot FAQs" editable="bottom">
+                <field name="priority" widget="handle"/>
+                <field name="question"/>
+                <field name="keywords"/>
+                <field name="match_type"/>
+                <field name="answer"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_whatsapp_lead_chatbot_faq" model="ir.actions.act_window">
+        <field name="name">Reply Chatbot FAQs</field>
+        <field name="res_model">otm.whatsapp.lead.chatbot.faq</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a FAQ for the reply chatbot</p>
+            <p>When a customer directly quote-replies to a stage-triggered WhatsApp message
+                (turned on under Lead Scheduler Settings), the reply chatbot checks this list
+                first, top to bottom by priority, and sends the first matching answer back
+                through that same officer's number.</p>
+        </field>
+    </record>
+</odoo>

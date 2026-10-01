@@ -59,11 +59,35 @@ Architecture
 * `leads.logic` gets: a computed stage button (label + visibility driven by
   the trigger list above), a "Schedule WhatsApp" button opening a small
   wizard, and a smart button showing that lead's WhatsApp message history.
+
+Reply chatbot (optional, off by default)
+-----------------------------------------
+When a customer directly quote-replies (WhatsApp's own reply/quote feature)
+to a stage-triggered template this module sent, an officer's bot instance
+forwards that reply to a new `/otm_whatsapp_lead/inbound` endpoint. A small
+FAQ list (`otm.whatsapp.lead.chatbot.faq`) is checked first, then an
+optional AI provider (reusing `otm_whatsapp_chatbot`'s own
+`otm.whatsapp.ai.provider` model - genuinely transport-agnostic, no
+Coexistence-specific coupling), then an optional fallback message. This is
+a deliberately independent, lightweight engine - NOT a reuse of
+`otm_whatsapp_chatbot`'s own flow/session engine, which requires a
+Coexistence phone number and would otherwise need faking one per officer.
+Turned on under WhatsApp > Configuration > Lead Scheduler Settings. Only
+ever activates on a direct quote-reply to a tracked outgoing message -
+never on an arbitrary incoming message.
 """,
     "author": "Otomater",
     "website": "https://otomater.com",
     "license": "OPL-1",
-    "depends": ["base", "mail", "custom_leads_19", "otm_whatsapp_coexistence"],
+    "depends": [
+        "base", "mail", "custom_leads_19", "otm_whatsapp_coexistence",
+        # Only for otm.whatsapp.ai.provider (genuinely provider-agnostic,
+        # no Coexistence-specific fields) - reused by the reply chatbot's
+        # optional AI fallback. The FAQ/rule matching itself is a deliberate
+        # independent copy, NOT a dependency on this module's chatbot engine
+        # - see models/whatsapp_lead_chatbot_faq.py's docstring for why.
+        "otm_whatsapp_chatbot",
+    ],
     "data": [
         "security/whatsapp_lead_security_groups.xml",
         "security/ir.model.access.csv",
@@ -79,6 +103,7 @@ Architecture
         "views/whatsapp_lead_bot_views.xml",
         "views/whatsapp_lead_template_views.xml",
         "views/whatsapp_lead_stage_trigger_views.xml",
+        "views/whatsapp_lead_chatbot_faq_views.xml",
         "views/res_config_settings_views.xml",
         "views/leads_logic_views.xml",
         "views/whatsapp_menus.xml",

@@ -76,6 +76,27 @@ class OtmWhatsappLeadMessage(models.Model):
     )
     message = fields.Text(required=True)
 
+    direction = fields.Selection(
+        [("out", "Outgoing"), ("in", "Incoming")],
+        default="out", required=True, readonly=True,
+        help="'Outgoing' covers every message this module itself sends (scheduled, "
+        "stage-triggered, or chatbot auto-reply). 'Incoming' is a customer's own "
+        "WhatsApp reply, logged here (never sent anywhere) purely so it shows in this "
+        "lead's message history alongside what was sent to them.",
+    )
+    wa_message_id = fields.Char(
+        string="WhatsApp Message ID", readonly=True, copy=False, index=True,
+        help="The Baileys/WhatsApp message id (stanzaId) this outgoing message was sent "
+        "as. Stored so a customer's later quote-reply to THIS exact message can be "
+        "matched back to it (see controllers/lead_whatsapp_inbound.py) - never set by "
+        "hand.",
+    )
+    wa_quoted_id = fields.Char(
+        string="Replying To (WhatsApp ID)", readonly=True, copy=False,
+        help="For an Incoming message only: the wa_message_id of the outgoing message "
+        "the customer quote-replied to.",
+    )
+
     # ── Optional media (one per message - WhatsApp only carries one
     # image/video/document per message) ─────────────────────────────────
     attachment_data = fields.Binary(string="Attachment")
@@ -161,6 +182,19 @@ class OtmWhatsappLeadMessage(models.Model):
         if not bot:
             bot = self.env["otm.whatsapp.lead.bot"].get_for_user(self.lead_id.lead_owner.user_id)
         return bot
+
+    @api.model
+    def get_by_wa_message_id(self, bot_id, wa_message_id):
+        """Used by controllers/lead_whatsapp_inbound.py to resolve which lead a
+        customer's quote-reply belongs to. Scoped to bot_id as well as the
+        wa_message_id itself - Baileys message ids are only unique per
+        WhatsApp session/instance, never globally."""
+        if not wa_message_id:
+            return self.browse()
+        return self.sudo().search(
+            [("bot_id", "=", bot_id), ("wa_message_id", "=", wa_message_id), ("direction", "=", "out")],
+            limit=1,
+        )
 
     def _validate_ready(self):
         self.ensure_one()
@@ -265,7 +299,14 @@ class OtmWhatsappLeadMessage(models.Model):
             self._mark_failed(str(exc))
             return
 
-        self.write({"state": "sent", "sent_date": fields.Datetime.now(), "last_error": False})
+        self.write(
+            {
+                "state": "sent",
+                "sent_date": fields.Datetime.now(),
+                "last_error": False,
+                "wa_message_id": result.get("message_id") or False,
+            }
+        )
         _logger.info("Lead message %s sent to lead '%s'", self.reference, self.lead_id.name)
 
     def _mark_failed(self, error_message):

@@ -21,6 +21,11 @@
         <field name="model_id" ref="model_otm_whatsapp_lead_message"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
     </record>
+    <record id="rule_whatsapp_lead_chatbot_faq_company" model="ir.rule">
+        <field name="name">WhatsApp Lead Chatbot FAQ: multi-company</field>
+        <field name="model_id" ref="model_otm_whatsapp_lead_chatbot_faq"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
 
     <!-- A plain User (Admission Officer) only sees messages for leads THEY
          own - never another officer's customer conversations, and never
