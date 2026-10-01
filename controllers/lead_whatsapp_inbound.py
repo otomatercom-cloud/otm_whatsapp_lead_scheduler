@@ -1,10 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Receives a customer's WhatsApp quote-reply, forwarded by this officer's
-own bot_service_update/whatsapp.js instance (see its messages.upsert
-listener). Only ever called for a message Baileys confirmed is a direct
-quote-reply to something that officer's number sent - this controller's own
-job is just to resolve WHICH sent message (via wa_message_id) and hand off
-to LeadChatbotEngine; it is never a general-purpose inbound-message webhook.
+"""Receives a customer's incoming WhatsApp message, forwarded by this
+officer's own bot_service_update/whatsapp.js instance (see its
+messages.upsert listener). This controller's own job is just to resolve
+WHICH lead/sent-message the customer is talking to and hand off to
+LeadChatbotEngine.
+
+CHANGED FROM THE ORIGINAL (reply-only) SCOPE: this originally only accepted
+an explicit WhatsApp quote-reply (matched via wa_message_id/quoted_id) -
+never a general-purpose inbound-message webhook, by deliberate design. Per
+an explicit later decision, a plain (non-reply) message is now accepted
+too, matched instead to "whatever this bot last sent to this same WhatsApp
+chat" (see get_latest_sent_to_jid()). This is a real, knowingly-accepted
+trade-off: every message the customer sends in this chat can now trigger
+the chatbot, not just explicit replies - there is no narrower signal once
+swipe-reply is not required.
 
 Auth: the same per-officer API token already used for every outbound call
 (LeadBotClient's Bearer token) - reused here as the Bearer token FROM the
@@ -41,8 +50,14 @@ class LeadWhatsappInboundController(http.Controller):
 
         text = (payload.get("text") or "").strip()
         quoted_id = payload.get("quoted_id")
-        if not quoted_id:
-            return self._json({"ok": False, "error": "quoted_id is required"}, status=400)
+        from_jid = payload.get("from")
+        # CHANGED: quoted_id is no longer required - a customer typing a
+        # plain message (not swipe-replying) is now also accepted, per an
+        # explicit later decision to drop the "must reply" requirement. At
+        # least one of quoted_id/from must still be present to have any
+        # hope of matching a lead at all.
+        if not quoted_id and not from_jid:
+            return self._json({"ok": False, "error": "quoted_id or from is required"}, status=400)
 
         Bot = request.env["otm.whatsapp.lead.bot"].sudo()
         bot = Bot.search([("api_token", "=", token)], limit=1)
@@ -52,12 +67,18 @@ class LeadWhatsappInboundController(http.Controller):
             return self._json({"ok": False, "error": "unauthorized"}, status=401)
 
         Message = request.env["otm.whatsapp.lead.message"].sudo()
-        source_message = Message.get_by_wa_message_id(bot.id, quoted_id)
+        # Prefer an explicit quote-reply match (precise: this exact message
+        # was replied to). Fall back to "whatever this chat's most recent
+        # outgoing message was" when there's no quote, or the quoted
+        # message isn't tracked - the only signal available for a plain,
+        # non-reply message.
+        source_message = Message.get_by_wa_message_id(bot.id, quoted_id) if quoted_id else Message.browse()
+        if not source_message:
+            source_message = Message.get_latest_sent_to_jid(bot.id, from_jid)
         if not source_message:
             _logger.info(
-                "Lead inbound webhook: no tracked outgoing message for bot %s / "
-                "wa_message_id %s - ignoring (likely a reply to an older/untracked "
-                "message, or a message this module didn't send).", bot.id, quoted_id,
+                "Lead inbound webhook: no tracked outgoing message for bot %s matching "
+                "quoted_id %s or chat %s - ignoring.", bot.id, quoted_id, from_jid,
             )
             return self._json({"ok": True, "matched": False})
 
@@ -72,6 +93,7 @@ class LeadWhatsappInboundController(http.Controller):
                 "direction": "in",
                 "message": text or "(empty message)",
                 "wa_quoted_id": quoted_id,
+                "wa_remote_jid": from_jid,
                 "state": "sent",
                 "sent_date": now,
                 # required once state != 'draft' (see the model's own constraint) -

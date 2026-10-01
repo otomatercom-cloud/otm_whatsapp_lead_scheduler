@@ -96,6 +96,15 @@ class OtmWhatsappLeadMessage(models.Model):
         help="For an Incoming message only: the wa_message_id of the outgoing message "
         "the customer quote-replied to.",
     )
+    wa_remote_jid = fields.Char(
+        string="WhatsApp Chat ID", readonly=True, copy=False, index=True,
+        help="For an Outgoing message: the exact WhatsApp chat identity (JID) Baileys "
+        "resolved when sending this - not necessarily the plain phone number, since "
+        "WhatsApp's newer '@lid' addressing can hide the real number. Stored so a "
+        "customer's later message in this SAME chat can be matched back to this lead "
+        "even without an explicit quote-reply (see get_latest_sent_to_jid() and "
+        "controllers/lead_whatsapp_inbound.py's fallback lookup).",
+    )
 
     # ── Optional media (one per message - WhatsApp only carries one
     # image/video/document per message) ─────────────────────────────────
@@ -194,6 +203,23 @@ class OtmWhatsappLeadMessage(models.Model):
         return self.sudo().search(
             [("bot_id", "=", bot_id), ("wa_message_id", "=", wa_message_id), ("direction", "=", "out")],
             limit=1,
+        )
+
+    @api.model
+    def get_latest_sent_to_jid(self, bot_id, remote_jid):
+        """Fallback used by controllers/lead_whatsapp_inbound.py when a
+        customer's incoming message is NOT an explicit quote-reply (or the
+        quoted message wasn't found): the most recent outgoing message THIS
+        bot sent to the exact same WhatsApp chat identity. Less precise than
+        get_by_wa_message_id (it assumes the customer is replying to
+        whatever this chat's most recent message was, which is usually but
+        not always true), but it's the only signal available once a reply
+        is no longer required."""
+        if not remote_jid:
+            return self.browse()
+        return self.sudo().search(
+            [("bot_id", "=", bot_id), ("wa_remote_jid", "=", remote_jid), ("direction", "=", "out")],
+            order="id desc", limit=1,
         )
 
     def _validate_ready(self):
@@ -305,6 +331,7 @@ class OtmWhatsappLeadMessage(models.Model):
                 "sent_date": fields.Datetime.now(),
                 "last_error": False,
                 "wa_message_id": result.get("message_id") or False,
+                "wa_remote_jid": result.get("jid") or False,
             }
         )
         _logger.info("Lead message %s sent to lead '%s'", self.reference, self.lead_id.name)

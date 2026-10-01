@@ -29,7 +29,14 @@ class LeadChatbotEngine:
         # user's session - env there has no meaningful user-level access of
         # its own, so every lookup this engine does must run with elevated
         # rights, same as the controller's own Bot/Message sudo() calls.
-        self.env = env.sudo()
+        # ODOO 19 RULE: Environment.sudo() was removed - calling .sudo()
+        # directly on an env object (not a recordset) now raises
+        # AttributeError: 'Environment' object has no attribute 'sudo'.
+        # The replacement is calling the environment itself with su=True:
+        # env(su=True). Recordset-level .sudo() (e.g. some_record.sudo())
+        # is unaffected and still works exactly as before - only the bare
+        # env.sudo() form broke.
+        self.env = env(su=True)
 
     def handle_reply(self, source_message, bot, customer_text):
         """`source_message` is the otm.whatsapp.lead.message that was replied
@@ -37,7 +44,14 @@ class LeadChatbotEngine:
         the reply text sent (or None if nothing was sent - e.g. chatbot
         disabled, no FAQ/AI match and no fallback configured)."""
         ICP = self.env["ir.config_parameter"].sudo()
-        if ICP.get_param("otm_whatsapp_lead_scheduler.chatbot_enabled", default="false") != "true":
+        # ODOO RULE: a Boolean field's config_parameter is stored as Python's
+        # str(bool) - "True"/"False" (capitalized), not lowercase "true"/
+        # "false". Comparing against a lowercase literal here always failed,
+        # so the chatbot silently treated itself as disabled even when the
+        # settings checkbox was ticked and saved. Normalize case before
+        # comparing.
+        enabled = (ICP.get_param("otm_whatsapp_lead_scheduler.chatbot_enabled", default="False") or "").strip().lower()
+        if enabled not in ("true", "1"):
             return None
 
         text = (customer_text or "").strip()
@@ -130,6 +144,7 @@ class LeadChatbotEngine:
                 "state": "sent",
                 "sent_date": _fields.Datetime.now(),
                 "wa_message_id": result.get("message_id"),
+                "wa_remote_jid": result.get("jid"),
             })
         else:
             vals.update({
